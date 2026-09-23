@@ -1,0 +1,13 @@
+{
+  "floor_area_sqft": 3200,
+  "voltage": 240,
+  "small_appliance_circuits": 2,
+  "laundry_circuits": 1,
+  "appliance_loads_va": [1500, 800, 900, 1600, 400, 6000],
+  "range_loads_va": [12000],
+  "dryer_loads_va": [6000],
+  "heating_va": 30000,
+  "cooling_va": 6000,
+  "motor_loads_va" : [900],
+  "conductor_material": "copper"
+}
