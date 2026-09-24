@@ -25,6 +25,7 @@ python -m unittest -v
 | `small_appliance_circuits` | Minimum two is enforced. |
 | `laundry_circuits` | Minimum one is enforced. |
 | `appliance_loads_va` | Nameplate VA list for the included permanent appliances. |
+| `appliance_loads_120v_va` | 120 V subset of appliance loads; only this list is included in neutral demand. |
 | `dryer_loads_va` | Separate dryer nameplate-VA list; one dryer is counted at at least 5,000 VA. |
 | `range_loads_va` | Separate range/oven nameplate-VA list; Table 7.2 is applied. |
 | `heating_va`, `cooling_va` | Properly calculated HVAC loads; only the larger is added. |
@@ -33,6 +34,9 @@ python -m unittest -v
 When `appliance_loads_va` has more than four entries, the calculator applies a
 75% demand factor to their combined value before applying the dwelling-load
 demand calculation. The raw and adjusted appliance totals are both reported.
+For neutral demand, use `appliance_loads_120v_va` to identify only the
+appliances supplied at 120 V; 240 V appliances in `appliance_loads_va` remain
+in the service calculation but are excluded from `neutral_va`.
 
 ## Dryer demand factor
 

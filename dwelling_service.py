@@ -20,14 +20,14 @@ from typing import Any
 ## JAKE NOTE: CHANGED 100 RATING TO #2 AWG CU SINCE WE WON'T EVER GO SMALLER THAN A 100A BREAKER SO
 ## PICK #2 AWG CU TO MATCH
 DWELLING_CONDUCTORS = {
-    "copper": [(100, "#2 AWG Cu"), (125, "#2 AWG Cu"), (150, "#1 AWG Cu"),
-               (175, "1/0 AWG Cu"), (200, "2/0 AWG Cu"), (225, "3/0 AWG Cu"),
-               (250, "4/0 AWG Cu"), (300, "250 kcmil Cu"), (350, "300 kcmil Cu"),
-               (400, "400 kcmil Cu")],
-    "aluminum": [(100, "#1 AWG Al"), (125, "1/0 AWG Al"), (150, "2/0 AWG Al"),
-                 (175, "3/0 AWG Al"), (200, "4/0 AWG Al"), (225, "250 kcmil Al"),
-                 (250, "300 kcmil Al"), (300, "350 kcmil Al"), (350, "400 kcmil Al"),
-                 (400, "600 kcmil Al")],
+    "copper": [(85, "#4 AWG Cu"),(100, "#2 AWG Cu"), (125, "#1 AWG Cu"),
+               (150, "1/0 AWG Cu"), (175, "2/0 AWG Cu"), (200, "3/0 AWG Cu"),
+               (225, "4/0 AWG Cu"), (250, "250 kcmil Cu"), (300, "350 kcmil Cu"),
+               (350, "500 kcmil Cu")],
+    "aluminum": [(100, "1/0 AWG Al"), (125, "2/0 AWG Al"),
+                 (150, "3/0 AWG Al"), (175, "4/0 AWG Al"), (200, "250 kcmil Al"),
+                 (225, "300 kcmil Al"), (250, "350 kcmil Al"), (300, "500 kcmil Al"),
+                 (350, "700 kcmil Al")],
 }
 
 # Equipment grounding conductor only: commonly used copper table values.
@@ -68,6 +68,8 @@ class Result:
     general_load_va: float
     appliance_load_va: float
     appliance_demand_va: float
+    appliance_120v_load_va: float
+    appliance_120v_demand_va: float
     dryer_count: int
     dryer_connected_va: float
     dryer_demand_factor_percent: float
@@ -163,7 +165,9 @@ def calculate(data: dict[str, Any]) -> Result:
     """Calculate a preliminary service from a JSON-compatible input mapping.
 
     appliance_loads_va is a list of nameplate VA values for included permanent
-    appliances. dryer_loads_va is a separate list of dryer nameplate VA values;
+    appliances. appliance_loads_120v_va identifies the subset of appliance
+    loads that operate at 120 V and are included in the neutral calculation.
+    dryer_loads_va is a separate list of dryer nameplate VA values;
     a single dryer is counted at no less than 5,000 VA; groups of dryers use
     their combined nameplate load before the group demand factor is applied.
     range_loads_va is a separate list of range or oven
@@ -185,6 +189,13 @@ def calculate(data: dict[str, Any]) -> Result:
     appliances = sum(appliance_loads)
     # Apply the requested 75% appliance demand when there are more than four.
     appliance_demand = appliances * 0.75 if len(appliance_loads) > 4 else appliances
+    appliance_120v_loads = [float(load) for load in data.get("appliance_loads_120v_va", [])]
+    if any(load < 0 for load in appliance_120v_loads):
+        raise ValueError("120 V appliance loads cannot be negative.")
+    appliance_120v = sum(appliance_120v_loads)
+    appliance_120v_demand = (
+        appliance_120v * 0.75 if len(appliance_loads) > 4 else appliance_120v
+    )
 
     # Dryer Calcs
     dryer_loads = [float(load) for load in data.get("dryer_loads_va", [])]
@@ -216,7 +227,7 @@ def calculate(data: dict[str, Any]) -> Result:
     service_va = demanded_other + hvac + motor_derate
     service_amps = service_va / voltage
 
-    neutral_va = demanded_general + appliance_demand + 0.7 * (dryer_demand + range_demand)
+    neutral_va = demanded_general + appliance_120v_demand + 0.7 * (dryer_demand + range_demand)
     neutral_amps = neutral_va / voltage
 
     # This optional method applies only where the calculated load is at least
@@ -240,7 +251,8 @@ def calculate(data: dict[str, Any]) -> Result:
     # An EGC normally accompanies a feeder, not the service conductors ahead
     # of the service disconnect. Do not confuse it with the separately sized GEC.
     egc = f"For a feeder only: {egc_size}; service GEC requires electrode details"
-    return Result(general, appliances, appliance_demand, len(dryer_loads), dryer_connected,
+    return Result(general, appliances, appliance_demand, appliance_120v, appliance_120v_demand,
+                  len(dryer_loads), dryer_connected,
                   dryer_factor * 100, dryer_demand, len(range_loads), sum(range_loads),
                   range_demand, range_breakdown, demanded_other, hvac, service_va, service_amps,
                   main, phase, neutral_amps, neutral, egc, warnings)

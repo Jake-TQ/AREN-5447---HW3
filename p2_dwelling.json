@@ -4,6 +4,7 @@
   "small_appliance_circuits": 2,
   "laundry_circuits": 1,
   "appliance_loads_va": [1500, 3000],
+  "appliance_loads_120v_va": [1500],
   "range_loads_va": [10000],
   "dryer_loads_va": [4500],
   "heating_va": 15000,

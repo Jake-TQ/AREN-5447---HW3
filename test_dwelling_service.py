@@ -16,7 +16,7 @@ class DwellingServiceTests(unittest.TestCase):
         self.assertEqual(result.calculated_service_va, 34020)
         self.assertAlmostEqual(result.calculated_service_amps, 141.75, places=3)
         self.assertEqual(result.main_breaker_amps, 150)
-        self.assertEqual(result.phase_conductors, "2/0 AWG Al")
+        self.assertEqual(result.phase_conductors, "3/0 AWG Al")
 
     def test_minimum_required_circuits(self):
         result = calculate({"floor_area_sqft": 1000, "small_appliance_circuits": 0, "laundry_circuits": 0})
@@ -54,13 +54,15 @@ class DwellingServiceTests(unittest.TestCase):
         result = calculate({
             "floor_area_sqft": 2400,
             "appliance_loads_va": [12000, 5500, 4500, 4500, 1200],
+            "appliance_loads_120v_va": [1200],
             "dryer_loads_va": [5000] * 5,
             "range_loads_va": [12000],
             "conductor_material": "aluminum",
         })
-        self.assertAlmostEqual(result.neutral_calculated_amps, 197.0625, places=3)
-        self.assertEqual(result.phase_conductors, "300 kcmil Al")
-        self.assertEqual(result.neutral_conductor, "4/0 AWG Al")
+        self.assertEqual(result.appliance_120v_demand_va, 1200)
+        self.assertAlmostEqual(result.neutral_calculated_amps, 115.5, places=3)
+        self.assertEqual(result.phase_conductors, "350 kcmil Al")
+        self.assertEqual(result.neutral_conductor, "2/0 AWG Al")
 
 
 if __name__ == "__main__":
